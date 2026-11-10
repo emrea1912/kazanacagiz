@@ -112,9 +112,13 @@ class GenerateKeyRequest(BaseModel):
 
 # --- API Endpoints ---
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def serve_index():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+
+@app.api_route("/healthz", methods=["GET", "HEAD"])
+def health_check():
+    return {"status": "ok"}
 
 @app.post("/api/auth/login")
 def login(req: LoginRequest):
