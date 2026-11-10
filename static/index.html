@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kazanacağız - Akıllı Ders & Soru Takip Sistemi</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="h-full flex flex-col font-sans antialiased select-none pb-20 md:pb-0">
+
+  <!-- TOP APP BAR -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="navigate('due')">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="font-black text-lg tracking-tight bg-gradient-to-r from-brand-700 to-indigo-600 bg-clip-text text-transparent">Kazanacağız</span>
+          <span class="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded ml-1">Akıllı Tekrar</span>
+        </div>
+      </div>
+
+      <!-- Active Exam Selector Pill -->
+      <button onclick="openExamModal()" class="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-brand-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-indigo-200/60 transition shadow-sm">
+        <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
+        <span id="headerExamName">Sınav Yükleniyor...</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-brand-500"></i>
+      </button>
+
+      <!-- Right Actions: Notifications & Premium & Profile -->
+      <div class="flex items-center gap-2">
+        <!-- Notification Bell (10:00 & 15:00 reminders) -->
+        <button onclick="toggleNotifications()" class="relative p-2 text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-full transition" title="Hatırlatmalar (10:00 / 15:00)">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span id="notifBadge" class="hidden absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white"></span>
+        </button>
+
+        <!-- Premium Badge / Open Premium Modal -->
+        <button id="premiumBadgeBtn" onclick="openPremiumModal()" class="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full transition shadow-sm">
+          <i data-lucide="crown" class="w-3.5 h-3.5"></i>
+          <span id="premiumBadgeText">Premium'a Geç</span>
+        </button>
+
+        <!-- User Profile Dropdown Toggle -->
+        <div class="relative">
+          <button id="userProfileBtn" onclick="toggleUserDropdown()" class="flex items-center gap-1.5 p-1.5 rounded-full hover:bg-slate-100 transition text-slate-700">
+            <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs" id="userAvatarText">U</div>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-600 hidden sm:inline"></i>
+          </button>
+          
+          <!-- Profile Dropdown Menu -->
+          <div id="userDropdown" class="hidden absolute right-0 top-10 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50">
+            <div class="px-3 py-1.5 border-b border-slate-100">
+              <p class="text-xs font-black text-slate-800" id="dropdownUsername">Kullanıcı</p>
+              <p class="text-[10px] text-slate-600 font-medium" id="dropdownRole">Öğrenci Hesabı</p>
+            </div>
+            <button onclick="openPremiumModal(); toggleUserDropdown()" class="w-full text-left px-3 py-2 text-xs font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2">
+              <i data-lucide="crown" class="w-3.5 h-3.5"></i>
+              <span>Premium Yükselt</span>
+            </button>
+            <button onclick="logoutUser()" class="w-full text-left px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+              <span>Çıkış Yap</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- NOTIFICATION DROPDOWN MODAL -->
+  <div id="notifDropdown" class="hidden fixed top-14 right-4 z-50 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 transition-all">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bell-ring" class="w-4 h-4 text-brand-600"></i>
+        <h3 class="font-bold text-sm text-slate-800">Günün Hatırlatmaları (TR 10:00 - 15:00)</h3>
+      </div>
+      <button onclick="toggleNotifications()" class="text-slate-600 hover:text-slate-700">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div id="notifList" class="divide-y divide-slate-100 max-h-72 overflow-y-auto mt-2">
+      <!-- Populated via JS -->
+    </div>
+  </div>
+
+  <!-- DESKTOP TOP NAV BAR -->
+  <nav class="hidden md:block bg-white border-b border-slate-200/80">
+    <div class="max-w-6xl mx-auto px-4 flex gap-6 text-sm font-semibold text-slate-600">
+      <button onclick="navigate('due')" class="nav-item-btn py-3 border-b-2 border-transparent hover:text-brand-600 flex items-center gap-2" data-tab="due">
+        <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+        Bugünkü Tekrarlar
+        <span id="desktopDueCount" class="hidden bg-rose-500 text-white text-[11px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+      </button>
+      <button onclick="navigate('upload')" class="nav-item-btn py-3 border-b-2 border-transparent hover:text-brand-600 flex items-center gap-2" data-tab="upload">
+        <i data-lucide="camera-plus" class="w-4 h-4"></i>
+        Soru Yükle
+      </button>
+      <button onclick="navigate('community')" class="nav-item-btn py-3 border-b-2 border-transparent hover:text-brand-600 flex items-center gap-2" data-tab="community">
+        <i data-lucide="flame" class="w-4 h-4 text-amber-500"></i>
+        Topluluk Havuzu (2. Mod)
+      </button>
+      <button onclick="navigate('archive')" class="nav-item-btn py-3 border-b-2 border-transparent hover:text-brand-600 flex items-center gap-2" data-tab="archive">
+        <i data-lucide="folder-check" class="w-4 h-4"></i>
+        Tüm Sorularım & İstatistik
+      </button>
+      <button id="adminTabBtn" onclick="navigate('admin')" class="hidden nav-item-btn py-3 border-b-2 border-transparent hover:text-brand-600 flex items-center gap-2 text-rose-600" data-tab="admin">
+        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+        Admin Paneli (<span id="adminPendingCount">0</span>)
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 overflow-y-auto">
+
+    <!-- TAB 1: BUGÜNKÜ TEKRARLAR (SPACED REPETITION) -->
+    <section id="tab-due" class="tab-content active space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Bugünkü Tekrarların</h1>
+          <p class="text-xs sm:text-sm text-slate-600">Aralıklı tekrar algoritması ile unutmaya karşı hafıza tazeleme.</p>
+        </div>
+        <div class="text-right">
+          <span id="dueBadge" class="bg-indigo-100 text-brand-700 text-xs font-bold px-3 py-1 rounded-full">0 Soru Bekliyor</span>
+        </div>
+      </div>
+
+      <!-- Question Card Container -->
+      <div id="dueContainer" class="min-h-[400px]">
+        <!-- Dynamic Question View will be injected here -->
+      </div>
+    </section>
+
+    <!-- TAB 2: SORU YÜKLEME (PC: CTRL+V / MOBİL: KAMERA) -->
+    <section id="tab-upload" class="tab-content hidden space-y-6">
+      <div class="bg-white rounded-3xl p-5 sm:p-8 border border-slate-200/80 shadow-sm max-w-2xl mx-auto space-y-5">
+        <div>
+          <h2 class="text-xl font-black text-slate-800">Yeni Soru Ekle</h2>
+          <p class="text-xs text-slate-600 mt-0.5">Mobilde kamerayla çek, masaüstünde doğrudan <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700 font-mono text-xs">Ctrl + V</kbd> ile ekran alıntısını yapıştır!</p>
+        </div>
+
+        <!-- Upload Limit Banner for Free Users -->
+        <div id="uploadLimitBanner" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between text-xs text-amber-800">
+          <div class="flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4 text-amber-600"></i>
+            <span>Ücretsiz Hesap: Bugün kalan yükleme hakkınız: <strong id="remainingUploadCount">5</strong> / 5</span>
+          </div>
+          <button onclick="togglePremiumStatus()" class="text-brand-600 font-bold hover:underline">Sınırsız Premium</button>
+        </div>
+
+        <!-- Image Input Drop Zone -->
+        <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-2xl p-6 text-center transition cursor-pointer bg-slate-50/50 hover:bg-indigo-50/20 relative group">
+          <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden">
+          
+          <div id="dropZonePrompt" class="space-y-3">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-indigo-100 text-brand-600 flex items-center justify-center group-hover:scale-105 transition">
+              <i data-lucide="camera" class="w-7 h-7"></i>
+            </div>
+            <div>
+              <p class="font-bold text-sm text-slate-700">Fotoğraf Çek / Dosya Seç veya Ekran Görüntüsü Yapıştır</p>
+              <p class="text-xs text-slate-600 mt-1">PC'de <span class="font-bold text-brand-600">Ctrl + V</span> ile kopyaladığın soruyu anında yapıştırabilirsin</p>
+            </div>
+          </div>
+
+          <!-- Image Preview -->
+          <div id="imagePreviewContainer" class="hidden relative">
+            <img id="imagePreview" src="" alt="Soru Önizleme" class="max-h-72 mx-auto rounded-xl object-contain shadow-md border border-slate-200">
+            <button type="button" onclick="clearSelectedImage(event)" class="absolute top-2 right-2 p-1.5 bg-rose-600 text-white rounded-full shadow hover:bg-rose-700 transition" title="Görseli Kaldır">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Ders ve Konu Bilgisi (Opsiyonel / Otomatik) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Ders Adı</label>
+            <input type="text" id="inputSubject" placeholder="Örn: Matematik, Coğrafya" class="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Konu</label>
+            <input type="text" id="inputTopic" placeholder="Örn: Türkiye'nin Dağları, Problemler" class="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+          </div>
+        </div>
+
+        <!-- ZORUNLU DOĞRU CEVAP SEÇİMİ (ŞART!) -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+              <span class="text-rose-500">*</span>
+              Bu Sorunun Doğru Cevabı Ne? (Zorunlu)
+            </label>
+            <span class="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2 py-0.5 rounded">Cevapsız Kaydedilemez</span>
+          </div>
+          <p class="text-[11px] text-slate-600">Soru tekrar karşına geldiğinde bu cevap senden saklanacak ve kendi cevabınla karşılaştırılacaktır.</p>
+          
+          <div class="grid grid-cols-5 gap-2 pt-1">
+            <button type="button" onclick="selectCorrectAnswer('A')" class="ans-btn py-3 rounded-xl border-2 font-black text-sm transition" data-ans="A">A</button>
+            <button type="button" onclick="selectCorrectAnswer('B')" class="ans-btn py-3 rounded-xl border-2 font-black text-sm transition" data-ans="B">B</button>
+            <button type="button" onclick="selectCorrectAnswer('C')" class="ans-btn py-3 rounded-xl border-2 font-black text-sm transition" data-ans="C">C</button>
+            <button type="button" onclick="selectCorrectAnswer('D')" class="ans-btn py-3 rounded-xl border-2 font-black text-sm transition" data-ans="D">D</button>
+            <button type="button" onclick="selectCorrectAnswer('E')" class="ans-btn py-3 rounded-xl border-2 font-black text-sm transition" data-ans="E">E</button>
+          </div>
+          <input type="hidden" id="selectedCorrectAnswer" value="">
+        </div>
+
+        <!-- Submit Button -->
+        <button id="uploadSubmitBtn" onclick="submitNewQuestion()" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-2xl font-black text-sm shadow-lg shadow-brand-500/25 transition flex items-center justify-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Soruyu Kaydet & Aralıklı Tekrara Ekle</span>
+        </button>
+
+        <p class="text-[11px] text-center text-slate-600">
+          * Kaydedilen soru ilk olarak <strong>2 gün sonra</strong> tekrar listenize düşecektir.
+        </p>
+      </div>
+    </section>
+
+    <!-- TAB 3: TOPLULUK HAVUZU (2. MOD - DİĞER KULLANICILARIN YAPAMADIĞI SORULAR) -->
+    <section id="tab-community" class="tab-content hidden space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
+            <h1 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Topluluk Zor Sorular Havuzu</h1>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-600">Sadece senin sınavına (<span id="communityExamTitle" class="font-bold text-brand-600"></span>) hazırlanan diğer öğrencilerin yanlış yaptığı sorular!</p>
+        </div>
+        <button onclick="loadCommunityPool()" class="self-start sm:self-auto px-3.5 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          Yenile
+        </button>
+      </div>
+
+      <div id="communityContainer" class="min-h-[350px]">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 4: ARŞİV & İSTATİSTİK -->
+    <section id="tab-archive" class="tab-content hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">Soru Kütüphanem</h1>
+          <p class="text-xs sm:text-sm text-slate-600">Tüm soruların, tekrar takvimleri ve 3 hafta üst üste bilerek ustalaştığın konular.</p>
+        </div>
+      </div>
+
+      <!-- Stats Summary Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200">
+          <span class="text-xs font-bold text-slate-600">Toplam Sorum</span>
+          <p id="statTotal" class="text-2xl font-black text-slate-800 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200">
+          <span class="text-xs font-bold text-amber-600">Tekrar Bekleyen</span>
+          <p id="statDue" class="text-2xl font-black text-amber-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200">
+          <span class="text-xs font-bold text-emerald-600">Ustalaşılan (3 Hafta)</span>
+          <p id="statMastered" class="text-2xl font-black text-emerald-600 mt-1">0</p>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200">
+          <span class="text-xs font-bold text-brand-600">Aktif Sınavım</span>
+          <p id="statExam" class="text-sm font-black text-brand-600 mt-2 truncate">-</p>
+        </div>
+      </div>
+
+      <!-- List of all questions -->
+      <div id="allQuestionsList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 5: ADMIN PANELİ (Sadece Admin yetkisinde görünür) -->
+    <section id="tab-admin" class="tab-content hidden space-y-5">
+      <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-3xl shadow-lg space-y-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shield-check" class="w-6 h-6 text-emerald-400"></i>
+          <h1 class="text-2xl font-black">Yönetici Paneli</h1>
+        </div>
+        <p class="text-xs text-slate-300">Kullanıcıların "Diğer" seçeneğiyle eklediği özel sınavları inceleyip tüm sisteme entegre edebilirsiniz.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-3xl border border-slate-200 space-y-4">
+        <h2 class="text-base font-black text-slate-800 flex items-center gap-2">
+          <i data-lucide="hourglass" class="w-4 h-4 text-amber-500"></i>
+          Onay Bekleyen Kullanıcı Sınavları
+        </h2>
+        <div id="adminPendingExamsList" class="divide-y divide-slate-100">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- ADMIN LICENSE KEY GENERATOR SECTION -->
+      <div class="bg-white p-6 rounded-3xl border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-black text-slate-800 flex items-center gap-2">
+            <i data-lucide="key" class="w-4 h-4 text-indigo-600"></i>
+            Premium Lisans Anahtarları
+          </h2>
+          <div class="flex gap-2">
+            <select id="adminKeyDuration" class="text-xs px-2.5 py-1.5 rounded-xl border border-slate-200 font-bold bg-slate-50">
+              <option value="30">30 Günlük (Aylık)</option>
+              <option value="90">90 Günlük (3 Aylık)</option>
+              <option value="365">365 Günlük (Yıllık)</option>
+            </select>
+            <button onclick="adminGenerateLicenseKey()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 shadow-sm">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              Yeni Key Üret
+            </button>
+          </div>
+        </div>
+        <div id="adminLicenseKeysList" class="max-h-60 overflow-y-auto divide-y divide-slate-100 text-xs">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM MOBILE NAVIGATION (MOBİL İÇİN) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-3 py-2 flex items-center justify-around">
+    <button onclick="navigate('due')" class="mobile-nav-btn flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600" data-tab="due">
+      <div class="relative">
+        <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+        <span id="mobileDueBadge" class="hidden absolute -top-1 -right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+      </div>
+      <span class="text-[10px] font-bold">Tekrarlar</span>
+    </button>
+    
+    <button onclick="navigate('upload')" class="mobile-nav-btn flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600" data-tab="upload">
+      <div class="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center -mt-5 shadow-lg shadow-brand-500/30">
+        <i data-lucide="plus" class="w-6 h-6"></i>
+      </div>
+      <span class="text-[10px] font-bold text-brand-600">Soru Yükle</span>
+    </button>
+
+    <button onclick="navigate('community')" class="mobile-nav-btn flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600" data-tab="community">
+      <i data-lucide="flame" class="w-5 h-5 text-amber-500"></i>
+      <span class="text-[10px] font-bold">Topluluk</span>
+    </button>
+
+    <button onclick="navigate('archive')" class="mobile-nav-btn flex flex-col items-center gap-1 text-slate-500 hover:text-brand-600" data-tab="archive">
+      <i data-lucide="folder-check" class="w-5 h-5"></i>
+      <span class="text-[10px] font-bold">Sorularım</span>
+    </button>
+  </nav>
+
+  <!-- EXAM SELECTION & "DİĞER" MODAL -->
+  <div id="examModal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <i data-lucide="graduation-cap" class="w-5 h-5 text-brand-600"></i>
+          <h3 class="font-black text-base text-slate-800">Hazırlandığın Sınavı Seç</h3>
+        </div>
+        <button onclick="closeExamModal()" class="text-slate-600 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600">Soruların ve topluluk havuzu seçtiğin sınava göre izole edilir, asla diğer sınavlarla karışmaz.</p>
+
+      <!-- Exam List -->
+      <div id="examListContainer" class="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+        <!-- Injected via JS -->
+      </div>
+
+      <!-- "DİĞER" SINAV EKLEME BÖLÜMÜ -->
+      <div class="pt-3 border-t border-slate-100 space-y-2">
+        <label class="block text-xs font-bold text-slate-700">Sınavın Listede Yok mu? (Diğer Ekle)</label>
+        <div class="flex gap-2">
+          <input type="text" id="customExamInput" placeholder="Örn: TUS, Kaymakamlık..." class="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <button onclick="submitCustomExam()" class="px-3.5 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold hover:bg-brand-700 transition">
+            Ekle & Seç
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-600">* Eklediğiniz sınav anında aktifleşir. Yönetici onayından sonra genele açılır.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI EXPLANATION MODAL -->
+  <div id="aiModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-black text-sm text-slate-800">Yapay Zekâ Soru Danışmanı</h3>
+        </div>
+        <button onclick="closeAiModal()" class="text-slate-600 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div id="aiContent" class="p-5 overflow-y-auto prose prose-sm max-w-none text-slate-700 space-y-3 leading-relaxed">
+        <!-- AI output injected here -->
+      </div>
+
+      <div class="p-3 border-t border-slate-100 text-right bg-slate-50 rounded-b-3xl">
+        <button onclick="closeAiModal()" class="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition">
+          Anladım, Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATION MODAL (LOGIN / REGISTER) -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/25">
+          <i data-lucide="brain-circuit" class="w-7 h-7"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Kazanacağız</h2>
+        <p class="text-xs text-slate-600">Akıllı Ders & Soru Takip Platformu</p>
+      </div>
+
+      <!-- Auth Tabs: Giriş / Kayıt -->
+      <div class="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
+        <button id="authTabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-xl bg-white text-brand-600 shadow-sm transition">
+          Giriş Yap
+        </button>
+        <button id="authTabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition">
+          Yeni Kayıt Ol
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Kullanıcı Adı</label>
+          <input type="text" id="loginUsername" required placeholder="Kullanıcı adınızı girin" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Şifre</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+        </div>
+        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-black text-xs shadow-md shadow-brand-500/25 transition">
+          Hesabıma Giriş Yap
+        </button>
+        <div class="pt-2 text-center text-[11px] text-slate-600">
+          <span>Demo Hesaplar: </span>
+          <button type="button" onclick="fillDemo('ogrenci', 'ogrenci123')" class="font-bold text-brand-600 hover:underline">Öğrenci</button>
+          <span> veya </span>
+          <button type="button" onclick="fillDemo('admin', 'admin123')" class="font-bold text-brand-600 hover:underline">Admin</button>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Kullanıcı Adı</label>
+          <input type="text" id="regUsername" required placeholder="Örn: ahmet123" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Şifre</label>
+          <input type="password" id="regPassword" required placeholder="En az 4 karakter" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Hazırlandığın Sınav</label>
+          <select id="regExamSelect" class="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <!-- Injected via JS -->
+          </select>
+        </div>
+        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-black text-xs shadow-md shadow-brand-500/25 transition">
+          Kayıt Ol ve Başla
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- PREMIUM PURCHASE & LICENSE KEY REDEEM MODAL -->
+  <div id="premiumModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+            <i data-lucide="crown" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-base text-slate-900">Kazanacağız PREMIUM</h3>
+            <p class="text-[11px] text-slate-600">Hedefine daha hızlı ulaşman için tüm limitleri kaldır!</p>
+          </div>
+        </div>
+        <button onclick="closePremiumModal()" class="text-slate-600 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Feature Bullets -->
+      <div class="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-700 bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100">
+        <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Sınırsız Soru Yükleme</div>
+        <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Topluluk Zor Soru Havuzu</div>
+        <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> 3 Hafta Sonrası AI Pekiştirme</div>
+        <div class="flex items-center gap-1.5"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Sınırsız AI Soru Danışmanı</div>
+      </div>
+
+      <!-- Method Tabs: Lisans Anahtarı vs Online Ödeme -->
+      <div class="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold">
+        <button id="premTabKeyBtn" onclick="switchPremiumTab('key')" class="flex-1 py-2 rounded-xl bg-white text-brand-600 shadow-sm transition">
+          🔑 Lisans / Key ile Aktifleştir
+        </button>
+        <button id="premTabCardBtn" onclick="switchPremiumTab('card')" class="flex-1 py-2 rounded-xl text-slate-600 hover:text-slate-900 transition">
+          💳 Kredi Kartı / Mağaza
+        </button>
+      </div>
+
+      <!-- TAB A: Lisans / Aktivasyon Anahtarı -->
+      <div id="premiumKeySection" class="space-y-3">
+        <p class="text-xs text-slate-600">Satın aldığınız veya promosyon olarak verilen lisans anahtarınızı giriniz:</p>
+        <div class="space-y-2">
+          <input type="text" id="licenseKeyInput" placeholder="Örn: KAZAN-PRO-2026" class="w-full text-center uppercase tracking-wider font-mono font-bold text-sm px-3.5 py-3 rounded-xl border-2 border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 bg-slate-50">
+          <button onclick="submitLicenseKey()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-black text-xs shadow-md shadow-brand-500/25 transition flex items-center justify-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>Anahtarı Doğrula & Premium'u Başlat</span>
+          </button>
+        </div>
+        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-[10px] text-slate-600">
+          💡 <strong>Deneme Lisans Kodları:</strong> <code class="text-brand-600 font-bold cursor-pointer" onclick="document.getElementById('licenseKeyInput').value='KAZAN-PRO-2026'">KAZAN-PRO-2026</code> veya <code class="text-brand-600 font-bold cursor-pointer" onclick="document.getElementById('licenseKeyInput').value='DERECE-VIP-30'">DERECE-VIP-30</code>
+        </div>
+      </div>
+
+      <!-- TAB B: Kredi Kartı / Mağaza Ödeme Simülasyonu -->
+      <div id="premiumCardSection" class="hidden space-y-3.5">
+        <!-- Plan Selector -->
+        <div class="grid grid-cols-2 gap-3">
+          <label class="p-3 rounded-2xl border-2 border-brand-600 bg-brand-50/40 cursor-pointer block text-center">
+            <input type="radio" name="planRadio" value="monthly" checked class="hidden">
+            <span class="block text-xs font-black text-slate-800">Aylık Paket</span>
+            <span class="block text-base font-black text-brand-600 mt-1">149 ₺</span>
+            <span class="block text-[10px] text-slate-600">Her ay yenilenir</span>
+          </label>
+          <label class="p-3 rounded-2xl border-2 border-slate-200 hover:border-slate-300 cursor-pointer block text-center">
+            <input type="radio" name="planRadio" value="yearly" class="hidden">
+            <span class="block text-xs font-black text-slate-800">Yıllık Paket 🎉</span>
+            <span class="block text-base font-black text-emerald-600 mt-1">999 ₺</span>
+            <span class="block text-[10px] text-emerald-700 font-bold">%45 Tasarruf</span>
+          </label>
+        </div>
+
+        <form onsubmit="handlePaymentSubmit(event)" class="space-y-2.5">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Kart Üzerindeki İsim</label>
+            <input type="text" id="cardHolder" required placeholder="Ad Soyad" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Kart Numarası</label>
+            <input type="text" id="cardNumber" maxlength="19" required placeholder="4543 •••• •••• 1234" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-0.5">Son Kullanma (AA/YY)</label>
+              <input type="text" id="cardExpiry" maxlength="5" required placeholder="12/28" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-0.5">CVV / Güvenlik Kodu</label>
+              <input type="password" id="cardCvv" maxlength="3" required placeholder="•••" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+          </div>
+          <button type="submit" class="w-full mt-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs shadow-md transition flex items-center justify-center gap-2">
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+            <span>Güvenli Ödemeyi Tamamla</span>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+/* Kazanacağız Custom Styles */
+
+/* Base & Typography */
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Nav Item Active States */
+.nav-item-btn.active {
+  color: #4f46e5;
+  border-bottom-color: #4f46e5;
+}
+
+.mobile-nav-btn.active {
+  color: #4f46e5;
+}
+
+/* Answer option buttons */
+.ans-btn {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  color: #334155;
+  transition: all 0.15s ease-in-out;
+}
+
+.ans-btn:hover {
+  border-color: #6366f1;
+  color: #4f46e5;
+  background-color: #f8fafc;
+}
+
+.ans-btn.selected {
+  background-color: #4f46e5;
+  border-color: #4338ca;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+/* Feedback Overlay Animations (DOĞRU & YANLIŞ) */
+@keyframes popFeedback {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-feedback {
+  animation: popFeedback 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Dual View Toggle Indicator */
+.view-toggle-btn.active {
+  background-color: #4f46e5;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Markdown styling in AI modal */
+.prose h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+.prose h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.2rem;
+  margin: 0.5rem 0;
+}
+.prose li {
+  margin-bottom: 0.25rem;
+}
